@@ -78,12 +78,22 @@ app.get('/health', (req, res) => {
 
 // Test endpoint to verify webhook URL is accessible
 app.get('/webhook-test', (req, res) => {
-  res.json({
-    status: 'webhook_url_accessible',
-    message: 'Webhook endpoint is accessible from the internet',
-    botInitialized: !!getBot(),
-    timestamp: new Date().toISOString()
-  });
+  try {
+    const bot = getBot();
+    res.json({
+      status: 'webhook_url_accessible',
+      message: 'Webhook endpoint is accessible from the internet',
+      botInitialized: !!bot,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[WebhookTest] Error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Start server on all interfaces (required for Azure)
