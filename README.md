@@ -241,3 +241,4 @@ For issues or questions, open an issue on GitHub or contact the developer.
 ---
 
 Made with 💪 for gym buddies everywhere!
+# Redeployment trigger
