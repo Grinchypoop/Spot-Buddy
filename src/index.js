@@ -76,6 +76,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Test endpoint to verify webhook URL is accessible
+app.get('/webhook-test', (req, res) => {
+  res.json({
+    status: 'webhook_url_accessible',
+    message: 'Webhook endpoint is accessible from the internet',
+    botInitialized: !!getBot(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Start server on all interfaces (required for Azure)
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
