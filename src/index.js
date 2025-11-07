@@ -18,13 +18,17 @@ app.use(express.static('public'));
 // Initialize database (don't block startup if it fails)
 initializeDatabase().catch(err => {
   console.error('Database initialization failed:', err.message);
+  console.error('Database error stack:', err.stack);
 });
 
 // Initialize Telegram bot (don't block startup if it fails)
 try {
+  console.log('Attempting to initialize Telegram bot...');
   initializeTelegramBot();
+  console.log('Telegram bot initialized successfully');
 } catch (error) {
   console.error('Telegram bot initialization failed:', error.message);
+  console.error('Bot error stack:', error.stack);
 }
 
 // Webhook endpoint for Telegram
