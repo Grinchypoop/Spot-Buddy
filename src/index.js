@@ -21,26 +21,16 @@ initializeDatabase().catch(err => {
   console.error('Database error stack:', err.stack);
 });
 
-// Initialize Telegram bot immediately and synchronously
-// This ensures the bot is ready before the server starts accepting requests
+// Initialize Telegram bot asynchronously (non-blocking)
+// The bot handlers are registered immediately, setup happens in background
 try {
   console.log('Attempting to initialize Telegram bot...');
   initializeTelegramBot();
-  console.log('Telegram bot initialized successfully');
-
-  // Set up bot commands and webhook in the background (non-blocking)
-  // This part can take time without blocking the server from starting
-  (async () => {
-    try {
-      // Wait a bit to ensure bot is fully set up before trying to configure it
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error('Bot background setup error:', error.message);
-    }
-  })();
+  console.log('Telegram bot initialized and handlers registered');
 } catch (error) {
   console.error('Telegram bot initialization failed:', error.message);
   console.error('Bot error stack:', error.stack);
+  // Don't exit - continue without the bot
 }
 
 // Webhook endpoint for Telegram
@@ -87,10 +77,16 @@ app.get('/health', (req, res) => {
 });
 
 // Start server on all interfaces (required for Azure)
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Mini-app available at http://localhost:${PORT}/mini-app`);
   console.log(`Webhook endpoint: /webhook`);
+  console.log(`[Startup] Server is ready to receive requests`);
+});
+
+// Handle server errors
+server.on('error', (err) => {
+  console.error('[Server] Error:', err);
 });
 
 module.exports = app;
