@@ -11,8 +11,8 @@ function initializeTelegramBot() {
 
   bot = new Telegraf(token);
 
-  // Set up bot commands for all scopes
-  const setupCommands = async () => {
+  // Set up bot commands and webhook for all scopes
+  const setupBotAndWebhook = async () => {
     try {
       const commands = [
         {
@@ -32,12 +32,17 @@ function initializeTelegramBot() {
       await bot.telegram.setMyCommands(commands, { scope: { type: 'all_group_chats' } });
 
       console.log('Bot commands set successfully for all scopes');
+
+      // Set webhook URL
+      const webhookUrl = `${process.env.AZURE_APP_URL}/webhook`;
+      await bot.telegram.setWebhook(webhookUrl);
+      console.log(`Webhook registered at: ${webhookUrl}`);
     } catch (err) {
-      console.error('Error setting commands:', err);
+      console.error('Error during bot setup:', err);
     }
   };
 
-  setupCommands();
+  setupBotAndWebhook();
 
   // Start command - opens mini app
   bot.command('start', async (ctx) => {
