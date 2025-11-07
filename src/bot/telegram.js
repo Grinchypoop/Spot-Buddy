@@ -3,62 +3,20 @@ const { getSupabaseClient } = require('../db/supabase');
 
 let bot;
 
-function initializeTelegramBot() {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
-    throw new Error('TELEGRAM_BOT_TOKEN is not set');
-  }
+// Handler function for start command
+async function handleStartCommand(ctx) {
+  try {
+    const chatId = ctx.chat.id;
+    const userId = ctx.from.id;
+    const userName = ctx.from.first_name || 'User';
 
-  bot = new Telegraf(token);
+    // Save group and user to database
+    await saveGroupAndUser(chatId, userId, ctx.from.username, ctx.chat.title);
 
-  // Set up bot commands and webhook for all scopes
-  const setupBotAndWebhook = async () => {
-    try {
-      const commands = [
-        {
-          command: 'start',
-          description: '🏋️ Start Spot Buddy - Track your gym workouts'
-        },
-        {
-          command: 'help',
-          description: '❓ Get help and learn how to use Spot Buddy'
-        }
-      ];
+    const miniAppLink = `${process.env.MINI_APP_URL}/mini-app?user_id=${userId}&chat_id=${chatId}`;
 
-      // Set commands for private chats
-      await bot.telegram.setMyCommands(commands, { scope: { type: 'default' } });
-
-      // Set commands for group chats
-      await bot.telegram.setMyCommands(commands, { scope: { type: 'all_group_chats' } });
-
-      console.log('Bot commands set successfully for all scopes');
-
-      // Set webhook URL
-      const webhookUrl = `${process.env.AZURE_APP_URL}/webhook`;
-      await bot.telegram.setWebhook(webhookUrl);
-      console.log(`Webhook registered at: ${webhookUrl}`);
-    } catch (err) {
-      console.error('Error during bot setup:', err);
-    }
-  };
-
-  setupBotAndWebhook();
-
-  // Start command - opens mini app
-  bot.command('start', async (ctx) => {
-    try {
-      const chatId = ctx.chat.id;
-      const userId = ctx.from.id;
-      const chatType = ctx.chat.type;
-      const userName = ctx.from.first_name || 'User';
-
-      // Save group and user to database
-      await saveGroupAndUser(chatId, userId, ctx.from.username, ctx.chat.title);
-
-      const miniAppLink = `${process.env.MINI_APP_URL}/mini-app?user_id=${userId}&chat_id=${chatId}`;
-
-      // Create welcome message with instructions
-      const welcomeMessage = `
+    // Create welcome message with instructions
+    const welcomeMessage = `
 👋 Welcome to Spot Buddy, ${userName}!
 
 🏋️ *Track Your Workouts* - Log exercises, sets, reps, duration, mood & notes
@@ -80,40 +38,40 @@ function initializeTelegramBot() {
 • Add to group to see all member's workouts and motivate each other
 `;
 
-      // Send welcome message with button
-      await ctx.telegram.sendMessage(
-        chatId,
-        welcomeMessage,
-        {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: '💪 Open Spot Buddy',
-                  url: miniAppLink
-                }
-              ],
-              [
-                {
-                  text: '➕ Add to Group',
-                  url: `https://t.me/${(await ctx.telegram.getMe()).username}?startgroup=true`
-                }
-              ]
+    // Send welcome message with button
+    await ctx.telegram.sendMessage(
+      chatId,
+      welcomeMessage,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: '💪 Open Spot Buddy',
+                url: miniAppLink
+              }
+            ],
+            [
+              {
+                text: '➕ Add to Group',
+                url: `https://t.me/${(await ctx.telegram.getMe()).username}?startgroup=true`
+              }
             ]
-          }
+          ]
         }
-      );
-    } catch (error) {
-      console.error('Error in start command:', error);
-      ctx.reply('Error starting app. Please try again.');
-    }
-  });
+      }
+    );
+  } catch (error) {
+    console.error('Error in start command:', error);
+    ctx.reply('Error starting app. Please try again.');
+  }
+}
 
-  // Help command
-  bot.command('help', async (ctx) => {
-    try {
-      const helpMessage = `
+// Handler function for help command
+async function handleHelpCommand(ctx) {
+  try {
+    const helpMessage = `
 *Spot Buddy Help* 💪
 
 *Features:*
@@ -137,35 +95,117 @@ function initializeTelegramBot() {
 Need more help? Check the app interface!
 `;
 
-      ctx.replyWithMarkdown(helpMessage);
-    } catch (error) {
-      console.error('Error in help command:', error);
-      ctx.reply('Error getting help. Please try again.');
+    ctx.replyWithMarkdown(helpMessage);
+  } catch (error) {
+    console.error('Error in help command:', error);
+    ctx.reply('Error getting help. Please try again.');
+  }
+}
+
+// Handler function for web app data
+async function handleWebAppData(ctx) {
+  try {
+    const data = JSON.parse(ctx.webAppData.data);
+    console.log('Received web app data:', data);
+
+    // Notify group about the workout
+    if (data.action === 'workout_logged') {
+      const message = `${ctx.from.first_name} just logged a workout!\n${data.summary}`;
+      await ctx.reply(message);
     }
+
+    ctx.answerWebAppQuery(data.alert_id, { type: 'notification', notification_id: '123' });
+  } catch (error) {
+    console.error('Error handling web app data:', error);
+  }
+}
+
+function initializeTelegramBot() {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    throw new Error('TELEGRAM_BOT_TOKEN is not set');
+  }
+
+  bot = new Telegraf(token);
+
+  // Register all handlers FIRST before setting up webhook
+  // This ensures handlers are ready when updates come in
+  console.log('Registering bot handlers...');
+
+  // Use both command() and hears() to ensure commands are caught
+  bot.command('start', (ctx) => {
+    console.log('[Handler] /start command triggered');
+    return handleStartCommand(ctx);
+  });
+  bot.hears('/start', (ctx) => {
+    console.log('[Handler] /start heard');
+    return handleStartCommand(ctx);
   });
 
-  // Handle incoming messages from mini app
-  bot.on('web_app_data', async (ctx) => {
-    try {
-      const data = JSON.parse(ctx.webAppData.data);
-      console.log('Received web app data:', data);
+  bot.command('help', (ctx) => {
+    console.log('[Handler] /help command triggered');
+    return handleHelpCommand(ctx);
+  });
+  bot.hears('/help', (ctx) => {
+    console.log('[Handler] /help heard');
+    return handleHelpCommand(ctx);
+  });
 
-      // Notify group about the workout
-      if (data.action === 'workout_logged') {
-        const message = `${ctx.from.first_name} just logged a workout!\n${data.summary}`;
-        await ctx.reply(message);
-      }
-
-      ctx.answerWebAppQuery(data.alert_id, { type: 'notification', notification_id: '123' });
-    } catch (error) {
-      console.error('Error handling web app data:', error);
-    }
+  bot.on('web_app_data', (ctx) => {
+    console.log('[Handler] web_app_data received');
+    return handleWebAppData(ctx);
   });
 
   // Error handling
   bot.catch((err) => {
     console.error('Bot error:', err);
   });
+
+  // Log all updates for debugging
+  bot.use((ctx, next) => {
+    console.log('[Bot] Update received:', { message: ctx.message?.text, type: ctx.updateType });
+    return next();
+  });
+
+  // Set up bot commands and webhook for all scopes
+  const setupBotAndWebhook = async () => {
+    try {
+      const commands = [
+        {
+          command: 'start',
+          description: '🏋️ Start Spot Buddy - Track your gym workouts'
+        },
+        {
+          command: 'help',
+          description: '❓ Get help and learn how to use Spot Buddy'
+        }
+      ];
+
+      // Set commands for private chats
+      await bot.telegram.setMyCommands(commands, { scope: { type: 'default' } });
+
+      // Set commands for group chats
+      await bot.telegram.setMyCommands(commands, { scope: { type: 'all_group_chats' } });
+
+      console.log('Bot commands set successfully for all scopes');
+
+      // Set webhook URL - use environment variable or fallback
+      const webhookUrl = process.env.AZURE_APP_URL
+        ? `${process.env.AZURE_APP_URL}/webhook`
+        : null;
+
+      if (webhookUrl) {
+        await bot.telegram.setWebhook(webhookUrl);
+        console.log(`Webhook registered at: ${webhookUrl}`);
+      } else {
+        console.warn('AZURE_APP_URL not set - webhook not registered. Set it for production.');
+      }
+    } catch (err) {
+      console.error('Error during bot setup:', err);
+    }
+  };
+
+  setupBotAndWebhook();
 
   console.log('Telegram bot initialized');
   return bot;
@@ -207,6 +247,11 @@ async function saveGroupAndUser(chatId, userId, username, groupTitle) {
   }
 }
 
+function getBot() {
+  return bot;
+}
+
 module.exports = {
   initializeTelegramBot,
+  getBot,
 };

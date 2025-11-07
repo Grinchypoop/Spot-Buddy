@@ -13,8 +13,11 @@ RUN npm ci --only=production
 # Copy the rest of the application
 COPY . .
 
-# Expose the port (Azure will assign a port via PORT environment variable)
-EXPOSE 3000
+# Expose port - Azure Web App for Containers uses 8080
+EXPOSE 8080
+
+# Set PORT environment variable for Azure
+ENV PORT=8080
 
 # Start the application
 CMD ["npm", "start"]
