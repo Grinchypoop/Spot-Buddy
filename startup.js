@@ -22,10 +22,13 @@ if (!process.env.PORT && !process.env.WEBSITE_PORT) {
 
 // Load and start the app
 try {
+  console.log('[Startup] Loading application from ./src/index.js...');
   require('./src/index.js');
   console.log('[Startup] Application loaded successfully');
 } catch (error) {
-  console.error('[Startup] Failed to load application:', error);
+  console.error('[Startup] Failed to load application!');
+  console.error('[Startup] Error message:', error.message);
+  console.error('[Startup] Error stack:', error.stack);
   process.exit(1);
 }
 
