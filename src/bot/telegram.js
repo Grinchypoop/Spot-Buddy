@@ -211,11 +211,20 @@ function initializeTelegramBot() {
           try {
             // First, delete any existing webhook to start fresh
             console.log('Deleting any existing webhook...');
-            await bot.telegram.deleteWebhook();
+            await bot.telegram.deleteWebhook({ drop_pending_updates: false });
             console.log('Existing webhook deleted');
 
-            // Now register the new webhook
-            await bot.telegram.setWebhook(webhookUrl);
+            // Small delay to ensure deletion is processed
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Now register the new webhook with explicit options
+            console.log('Registering new webhook...');
+            await bot.telegram.setWebhook(
+              webhookUrl,
+              {
+                allowed_updates: ['message', 'callback_query', 'web_app_data']
+              }
+            );
             console.log(`Webhook registered successfully`);
 
             // Verify the webhook was set
@@ -223,10 +232,20 @@ function initializeTelegramBot() {
             console.log('Webhook info:', {
               url: webhookInfo.url,
               has_custom_certificate: webhookInfo.has_custom_certificate,
-              pending_update_count: webhookInfo.pending_update_count
+              pending_update_count: webhookInfo.pending_update_count,
+              ip_address: webhookInfo.ip_address,
+              last_error_date: webhookInfo.last_error_date,
+              last_error_message: webhookInfo.last_error_message
             });
+
+            // If there's a last_error, log it prominently
+            if (webhookInfo.last_error_message) {
+              console.error('⚠️  WEBHOOK ERROR:', webhookInfo.last_error_message);
+              console.error('⚠️  Last error date:', new Date(webhookInfo.last_error_date * 1000));
+            }
           } catch (webhookErr) {
             console.error('Could not register webhook:', webhookErr.message);
+            console.error('Full error:', webhookErr);
           }
         } else {
           console.warn('AZURE_APP_URL not set - webhook not registered. Set it for production.');
