@@ -209,8 +209,22 @@ function initializeTelegramBot() {
         if (webhookUrl) {
           console.log(`Setting webhook to: ${webhookUrl}`);
           try {
+            // First, delete any existing webhook to start fresh
+            console.log('Deleting any existing webhook...');
+            await bot.telegram.deleteWebhook();
+            console.log('Existing webhook deleted');
+
+            // Now register the new webhook
             await bot.telegram.setWebhook(webhookUrl);
             console.log(`Webhook registered successfully`);
+
+            // Verify the webhook was set
+            const webhookInfo = await bot.telegram.getWebhookInfo();
+            console.log('Webhook info:', {
+              url: webhookInfo.url,
+              has_custom_certificate: webhookInfo.has_custom_certificate,
+              pending_update_count: webhookInfo.pending_update_count
+            });
           } catch (webhookErr) {
             console.error('Could not register webhook:', webhookErr.message);
           }
