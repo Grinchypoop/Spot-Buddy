@@ -21,15 +21,18 @@ initializeDatabase().catch(err => {
   console.error('Database error stack:', err.stack);
 });
 
-// Initialize Telegram bot (don't block startup if it fails)
-try {
-  console.log('Attempting to initialize Telegram bot...');
-  initializeTelegramBot();
-  console.log('Telegram bot initialized successfully');
-} catch (error) {
-  console.error('Telegram bot initialization failed:', error.message);
-  console.error('Bot error stack:', error.stack);
-}
+// Initialize Telegram bot asynchronously (don't block startup)
+// This runs in the background and doesn't prevent the server from starting
+setImmediate(() => {
+  try {
+    console.log('Attempting to initialize Telegram bot...');
+    initializeTelegramBot();
+    console.log('Telegram bot initialized successfully');
+  } catch (error) {
+    console.error('Telegram bot initialization failed:', error.message);
+    console.error('Bot error stack:', error.stack);
+  }
+});
 
 // Webhook endpoint for Telegram
 app.post('/webhook', async (req, res) => {

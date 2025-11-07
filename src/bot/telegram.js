@@ -182,36 +182,43 @@ function initializeTelegramBot() {
         }
       ];
 
-      console.log('Setting up bot commands...');
-      // Set commands for private chats
-      await bot.telegram.setMyCommands(commands, { scope: { type: 'default' } });
+      // Set a timeout for the entire setup
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Bot setup timeout after 30 seconds')), 30000)
+      );
 
-      // Set commands for group chats
-      await bot.telegram.setMyCommands(commands, { scope: { type: 'all_group_chats' } });
+      const setupPromise = (async () => {
+        console.log('Setting up bot commands...');
+        // Set commands for private chats
+        await bot.telegram.setMyCommands(commands, { scope: { type: 'default' } });
 
-      console.log('Bot commands set successfully for all scopes');
+        // Set commands for group chats
+        await bot.telegram.setMyCommands(commands, { scope: { type: 'all_group_chats' } });
 
-      // Set webhook URL - use environment variable or fallback
-      const webhookUrl = process.env.AZURE_APP_URL
-        ? `${process.env.AZURE_APP_URL}/webhook`
-        : null;
+        console.log('Bot commands set successfully for all scopes');
 
-      if (webhookUrl) {
-        console.log(`Setting webhook to: ${webhookUrl}`);
-        await bot.telegram.setWebhook(webhookUrl);
-        console.log(`Webhook registered successfully`);
-      } else {
-        console.warn('AZURE_APP_URL not set - webhook not registered. Set it for production.');
-      }
+        // Set webhook URL - use environment variable or fallback
+        const webhookUrl = process.env.AZURE_APP_URL
+          ? `${process.env.AZURE_APP_URL}/webhook`
+          : null;
+
+        if (webhookUrl) {
+          console.log(`Setting webhook to: ${webhookUrl}`);
+          await bot.telegram.setWebhook(webhookUrl);
+          console.log(`Webhook registered successfully`);
+        } else {
+          console.warn('AZURE_APP_URL not set - webhook not registered. Set it for production.');
+        }
+      })();
+
+      await Promise.race([setupPromise, timeoutPromise]);
     } catch (err) {
-      console.error('Error during bot setup:', err);
+      console.error('Error during bot setup:', err.message);
     }
   };
 
-  // Start setup in background - don't block initialization
-  setupBotAndWebhook().catch(err => {
-    console.error('Unhandled error in setupBotAndWebhook:', err);
-  });
+  // Start setup in background with no awaiting
+  setupBotAndWebhook();
 
   console.log('Telegram bot initialized successfully');
   return bot;
