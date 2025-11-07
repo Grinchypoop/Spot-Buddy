@@ -189,13 +189,17 @@ function initializeTelegramBot() {
 
       const setupPromise = (async () => {
         console.log('Setting up bot commands...');
-        // Set commands for private chats
-        await bot.telegram.setMyCommands(commands, { scope: { type: 'default' } });
+        try {
+          // Set commands for private chats
+          await bot.telegram.setMyCommands(commands, { scope: { type: 'default' } });
 
-        // Set commands for group chats
-        await bot.telegram.setMyCommands(commands, { scope: { type: 'all_group_chats' } });
+          // Set commands for group chats
+          await bot.telegram.setMyCommands(commands, { scope: { type: 'all_group_chats' } });
 
-        console.log('Bot commands set successfully for all scopes');
+          console.log('Bot commands set successfully for all scopes');
+        } catch (cmdErr) {
+          console.warn('Could not set bot commands:', cmdErr.message);
+        }
 
         // Set webhook URL - use environment variable or fallback
         const webhookUrl = process.env.AZURE_APP_URL
@@ -204,8 +208,12 @@ function initializeTelegramBot() {
 
         if (webhookUrl) {
           console.log(`Setting webhook to: ${webhookUrl}`);
-          await bot.telegram.setWebhook(webhookUrl);
-          console.log(`Webhook registered successfully`);
+          try {
+            await bot.telegram.setWebhook(webhookUrl);
+            console.log(`Webhook registered successfully`);
+          } catch (webhookErr) {
+            console.error('Could not register webhook:', webhookErr.message);
+          }
         } else {
           console.warn('AZURE_APP_URL not set - webhook not registered. Set it for production.');
         }
@@ -218,7 +226,7 @@ function initializeTelegramBot() {
   };
 
   // Start setup in background with no awaiting
-  setupBotAndWebhook();
+  setImmediate(setupBotAndWebhook);
 
   console.log('Telegram bot initialized successfully');
   return bot;

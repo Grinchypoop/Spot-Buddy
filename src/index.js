@@ -45,23 +45,30 @@ try {
 
 // Webhook endpoint for Telegram
 app.post('/webhook', async (req, res) => {
+  console.log('[Webhook] Incoming request received');
   try {
     const bot = getBot();
     if (!bot) {
-      console.warn('Bot not initialized, skipping webhook');
+      console.error('[Webhook] ERROR: Bot not initialized when webhook arrived!');
       res.status(200).send('ok');
       return;
     }
 
     // Log incoming updates for debugging
+    console.log('[Webhook] Bot is initialized, processing update');
     if (req.body.message?.text) {
       console.log(`[Webhook] Received message: ${req.body.message.text}`);
     }
+    if (req.body.callback_query) {
+      console.log(`[Webhook] Received callback query`);
+    }
 
     await bot.handleUpdate(req.body);
+    console.log('[Webhook] Update handled successfully');
     res.status(200).send('ok');
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    console.error('[Webhook] Error handling webhook:', error.message);
+    console.error('[Webhook] Error stack:', error.stack);
     res.status(500).send('error');
   }
 });
