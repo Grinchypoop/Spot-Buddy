@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spot Buddy - Gym Tracker</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+      <button class="nav-btn active" data-tab="log">📝 Log</button>
+      <button class="nav-btn" data-tab="leaderboard">🏆 Leaderboard</button>
+    </nav>
+
+    <!-- Tabs Container -->
+    <div class="tabs-container">
+      <!-- Log Tab -->
+      <div id="log" class="tab-content active">
+        <div class="container">
+          <h1>Log Workout</h1>
+
+          <div class="section">
+            <h2>Add Exercises</h2>
+            <div class="exercises-list" id="exercises-list"></div>
+            <button class="btn-secondary" id="add-exercise-btn">+ Add Exercise</button>
+          </div>
+
+          <div class="section">
+            <h2>How are you feeling?</h2>
+            <div class="mood-selector" id="mood-selector">
+              <button class="mood-btn" data-mood="😍">😍</button>
+              <button class="mood-btn" data-mood="😌">😌</button>
+              <button class="mood-btn" data-mood="😮‍💨">😮‍💨</button>
+              <button class="mood-btn" data-mood="😴">😴</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>Notes</h2>
+            <textarea id="notes" placeholder="Any additional notes about your workout..."></textarea>
+          </div>
+
+          <button class="btn-primary" id="submit-btn">Log Full Workout</button>
+        </div>
+      </div>
+
+      <!-- Leaderboard Tab -->
+      <div id="leaderboard" class="tab-content">
+        <div class="container">
+          <h1>Group Workouts</h1>
+
+          <!-- Month Navigation -->
+          <div class="month-navigation">
+            <button class="btn-nav" id="prev-month">←</button>
+            <span id="currentMonth"></span>
+            <button class="btn-nav" id="next-month">→</button>
+          </div>
+
+          <!-- Calendar -->
+          <div class="calendar">
+            <div class="calendar-header">
+              <div class="calendar-header-day">Sun</div>
+              <div class="calendar-header-day">Mon</div>
+              <div class="calendar-header-day">Tue</div>
+              <div class="calendar-header-day">Wed</div>
+              <div class="calendar-header-day">Thu</div>
+              <div class="calendar-header-day">Fri</div>
+              <div class="calendar-header-day">Sat</div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+          </div>
+
+          <!-- Day Details -->
+          <div id="day-details" style="display: none;">
+            <div class="day-details">
+              <h2 id="selected-date"></h2>
+              <div class="day-workouts" id="day-workouts"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workout Detail Modal -->
+  <div id="workout-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; overflow-y: auto; padding: 20px 10px;">
+    <div style="background: var(--surface); margin: 0 auto; border-radius: 12px; padding: 16px; max-width: 100%; width: 100%;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <h2 id="modal-username" style="margin: 0; color: var(--primary); font-size: 18px; flex: 1;"></h2>
+        <button id="close-modal" style="background: none; border: none; color: var(--text-primary); font-size: 24px; cursor: pointer; flex-shrink: 0; margin-left: 10px;">✕</button>
+      </div>
+      <div id="modal-content" style="margin-bottom: 16px; max-height: 60vh; overflow-y: auto;"></div>
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button id="edit-workout-btn" style="flex: 1; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Edit</button>
+        <button id="delete-workout-btn" style="flex: 1; padding: 14px; background: #DC2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Workout Modal -->
+  <div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1001; overflow-y: auto; padding: 20px 10px;">
+    <div style="background: var(--surface); margin: 0 auto; border-radius: 12px; padding: 16px; max-width: 100%; width: 100%;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <h2 style="margin: 0; color: var(--primary); font-size: 18px; flex: 1;">Edit Workout</h2>
+        <button id="close-edit-modal" style="background: none; border: none; color: var(--text-primary); font-size: 24px; cursor: pointer; flex-shrink: 0; margin-left: 10px;">✕</button>
+      </div>
+      <div id="edit-modal-content" style="margin-bottom: 16px; max-height: 60vh; overflow-y: auto;"></div>
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button id="save-workout-btn" style="flex: 1; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Save</button>
+        <button id="cancel-edit-btn" style="flex: 1; padding: 14px; background: var(--surface-light); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Get Telegram WebApp instance
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // Get user parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id');
+    const chatId = urlParams.get('chat_id');
+
+    // State
+    let currentMood = null;
+    let exercises = [];
+    let currentMonth = new Date();
+    let userColors = {}; // Map to store user -> color assignments
+    let allWorkouts = []; // Store all workouts for reference
+
+    // Color palette for users (vibrant, distinct colors)
+    const colorPalette = [
+      '#FF6B6B', // Red
+      '#4ECDC4', // Teal
+      '#45B7D1', // Blue
+      '#FFA07A', // Light Salmon
+      '#98D8C8', // Mint
+      '#F7DC6F', // Yellow
+      '#BB8FCE', // Purple
+      '#85C1E2', // Sky Blue
+      '#F8B88B', // Peach
+      '#52C4A1', // Green
+    ];
+
+    // Assign color to user (consistent across sessions)
+    function getUserColor(username) {
+      if (!userColors[username]) {
+        const colorIndex = Object.keys(userColors).length % colorPalette.length;
+        userColors[username] = colorPalette[colorIndex];
+      }
+      return userColors[username];
+    }
+
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      setupTabNavigation();
+      setupExerciseHandling();
+      setupMoodSelector();
+      setupCalendar();
+      setupSubmitButton();
+    });
+
+    // Tab Navigation
+    function setupTabNavigation() {
+      const navBtns = document.querySelectorAll('.nav-btn');
+      navBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tabName = btn.dataset.tab;
+          switchTab(tabName);
+        });
+      });
+    }
+
+    function switchTab(tabName) {
+      // Update active nav button
+      document.querySelectorAll('.nav-btn').forEach((btn) => {
+        btn.classList.remove('active');
+        if (btn.dataset.tab === tabName) {
+          btn.classList.add('active');
+        }
+      });
+
+      // Update active tab content
+      document.querySelectorAll('.tab-content').forEach((content) => {
+        content.classList.remove('active');
+      });
+      document.getElementById(tabName).classList.add('active');
+
+      // Load data when switching tabs
+      if (tabName === 'leaderboard') {
+        loadGroupWorkouts();
+      }
+    }
+
+    // Exercise Handling
+    function setupExerciseHandling() {
+      const addBtn = document.getElementById('add-exercise-btn');
+      addBtn.addEventListener('click', addExercise);
+    }
+
+    function addExercise() {
+      const exerciseId = Date.now();
+      const exerciseHTML = `
+        <div class="exercise-item" data-id="${exerciseId}">
+          <div class="exercise-top-row">
+            <input
+              type="text"
+              class="exercise-name"
+              placeholder="Exercise name"
+              data-id="${exerciseId}"
+            />
+            <input
+              type="number"
+              class="exercise-duration"
+              placeholder="Duration"
+              min="1"
+              data-id="${exerciseId}"
+            />
+            <button class="btn-remove" data-id="${exerciseId}">✕</button>
+          </div>
+          <div class="exercise-bottom-row">
+            <input
+              type="number"
+              class="exercise-sets"
+              placeholder="Sets"
+              min="1"
+              data-id="${exerciseId}"
+            />
+            <input
+              type="number"
+              class="exercise-reps"
+              placeholder="Reps"
+              min="1"
+              data-id="${exerciseId}"
+            />
+          </div>
+        </div>
+      `;
+
+      document.getElementById('exercises-list').insertAdjacentHTML('beforeend', exerciseHTML);
+
+      // Add remove listener
+      document.querySelector(`[data-id="${exerciseId}"] .btn-remove`).addEventListener('click', () => {
+        document.querySelector(`[data-id="${exerciseId}"]`).remove();
+      });
+    }
+
+    // Mood Selector
+    function setupMoodSelector() {
+      const moodBtns = document.querySelectorAll('.mood-btn');
+      moodBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          moodBtns.forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          currentMood = btn.dataset.mood;
+        });
+      });
+    }
+
+    // Submit Button
+    function setupSubmitButton() {
+      document.getElementById('submit-btn').addEventListener('click', submitWorkout);
+    }
+
+    let isSubmitting = false;
+
+    async function submitWorkout() {
+      // Prevent duplicate submissions
+      if (isSubmitting) {
+        return;
+      }
+
+      // Collect exercise data
+      const exerciseItems = document.querySelectorAll('.exercise-item');
+      exercises = [];
+
+      exerciseItems.forEach((item) => {
+        const id = item.dataset.id;
+        const name = item.querySelector('.exercise-name').value;
+        const sets = parseInt(item.querySelector('.exercise-sets').value) || 0;
+        const reps = parseInt(item.querySelector('.exercise-reps').value) || 0;
+        const duration = parseInt(item.querySelector('.exercise-duration').value) || 0;
+
+        if (name && (sets || reps || duration)) {
+          exercises.push({ name, sets, reps, duration });
+        }
+      });
+
+      if (exercises.length === 0) {
+        alert('Please add at least one exercise');
+        return;
+      }
+
+      if (!currentMood) {
+        alert('Please select a mood');
+        return;
+      }
+
+      const notes = document.getElementById('notes').value;
+
+      // Get timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      // Disable submit button
+      isSubmitting = true;
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.5';
+
+      // Submit to API
+      try {
+        const response = await fetch('/api/workouts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            group_id: chatId,
+            exercises,
+            mood: currentMood,
+            notes,
+            timezone,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert('Workout logged successfully!');
+          // Reset form
+          document.getElementById('exercises-list').innerHTML = '';
+          exercises = [];
+          currentMood = null;
+          document.getElementById('notes').value = '';
+          document.querySelectorAll('.mood-btn').forEach((btn) => btn.classList.remove('selected'));
+          // Refresh calendar to show the new workout
+          loadGroupWorkouts();
+          // Re-add first exercise
+          addExercise();
+        } else {
+          alert('Error: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to log workout');
+      } finally {
+        // Re-enable submit button
+        isSubmitting = false;
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+      }
+    }
+
+    // Leaderboard Tab
+    function setupCalendar() {
+      document.getElementById('prev-month').addEventListener('click', () => {
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        renderCalendar();
+        loadGroupWorkouts();
+      });
+
+      document.getElementById('next-month').addEventListener('click', () => {
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        renderCalendar();
+        loadGroupWorkouts();
+      });
+    }
+
+    function renderCalendar() {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+
+      // Update month display
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+      ];
+      document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+
+      // Get first day and number of days
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      // Previous month's days
+      for (let i = firstDay - 1; i >= 0; i--) {
+        const day = daysInPrevMonth - i;
+        const btn = document.createElement('button');
+        btn.className = 'calendar-day other-month';
+        btn.textContent = day;
+        grid.appendChild(btn);
+      }
+
+      // Current month's days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const btn = document.createElement('button');
+        btn.className = 'calendar-day';
+        btn.textContent = day;
+
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        btn.addEventListener('click', () => {
+          showDayDetails(dateStr);
+        });
+
+        grid.appendChild(btn);
+      }
+
+      // Next month's days
+      const totalCells = grid.children.length;
+      const remainingCells = 42 - totalCells;
+      for (let day = 1; day <= remainingCells; day++) {
+        const btn = document.createElement('button');
+        btn.className = 'calendar-day other-month';
+        btn.textContent = day;
+        grid.appendChild(btn);
+      }
+    }
+
+    async function loadGroupWorkouts() {
+      try {
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth() + 1;
+
+        console.log(`Loading workouts for group ${chatId}, month ${month}/${year}`);
+
+        const response = await fetch(`/api/workouts/group/${chatId}?month=${month}&year=${year}`);
+
+        if (!response.ok) {
+          console.error('API error:', response.status, response.statusText);
+          return;
+        }
+
+        const workouts = await response.json();
+        allWorkouts = workouts; // Store for reference
+        console.log('Fetched workouts:', workouts);
+
+        // Build map of date -> users with workouts
+        const dateUserMap = {};
+        workouts.forEach((workout) => {
+          const workoutDate = new Date(workout.date);
+          const year = workoutDate.getUTCFullYear();
+          const month = String(workoutDate.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(workoutDate.getUTCDate()).padStart(2, '0');
+          const date = `${year}-${month}-${day}`;
+
+          const username = workout.users?.username || 'Unknown User';
+
+          if (!dateUserMap[date]) {
+            dateUserMap[date] = [];
+          }
+          if (!dateUserMap[date].includes(username)) {
+            dateUserMap[date].push(username);
+          }
+        });
+
+        console.log('Date user map:', dateUserMap);
+
+        // Clear previous custom HTML
+        document.querySelectorAll('.calendar-day:not(.other-month)').forEach((btn) => {
+          btn.innerHTML = btn.textContent;
+          btn.classList.remove('has-workout');
+        });
+
+        // Update calendar with user color circles
+        document.querySelectorAll('.calendar-day:not(.other-month)').forEach((btn) => {
+          const day = parseInt(btn.textContent);
+          const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+          if (dateUserMap[dateStr] && dateUserMap[dateStr].length > 0) {
+            btn.classList.add('has-workout');
+            const users = dateUserMap[dateStr];
+
+            // Create colored circles for each user
+            const circlesHTML = users
+              .map((username) => {
+                const color = getUserColor(username);
+                return `<div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; display: inline-block; margin: 0 2px;" title="${username}"></div>`;
+              })
+              .join('');
+
+            btn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <div>${day}</div>
+                <div style="display: flex; gap: 2px;">${circlesHTML}</div>
+              </div>
+            `;
+          }
+        });
+
+      } catch (error) {
+        console.error('Error loading group workouts:', error);
+      }
+    }
+
+    function showDayDetails(dateStr) {
+      console.log('showDayDetails called with dateStr:', dateStr);
+      document.getElementById('day-details').style.display = 'block';
+      document.getElementById('selected-date').textContent = new Date(dateStr).toLocaleDateString();
+
+      // Fetch workouts for this day
+      const apiUrl = `/api/groups/${chatId}/workouts/${dateStr}`;
+      console.log('Fetching from:', apiUrl);
+
+      fetch(apiUrl)
+        .then((res) => {
+          console.log('Response status:', res.status);
+          return res.json();
+        })
+        .then((workouts) => {
+          console.log('Workouts received:', workouts);
+          if (!workouts || workouts.length === 0) {
+            console.log('No workouts found');
+            document.getElementById('day-workouts').innerHTML = '<p>No workouts on this day</p>';
+            return;
+          }
+
+          const html = workouts
+            .map((workout) => {
+              const exercises = Array.isArray(workout.exercises) ? workout.exercises : JSON.parse(workout.exercises);
+              const username = workout.users?.username || 'User';
+              const notes = (workout.notes || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+              const exercisesJson = JSON.stringify(exercises).replace(/"/g, '&quot;');
+
+              return `
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <div class="workout-card" style="cursor: pointer; flex: 1;" onclick="showWorkoutDetails('${username}', '${exercisesJson}', '${workout.mood}', '${notes}', ${workout.id})">
+                    <div class="workout-user">${username}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Click to view details</div>
+                    <div class="workout-mood" style="text-align: center; font-size: 24px;">${workout.mood}</div>
+                  </div>
+                  <button onclick="deleteWorkout(${workout.id}, event)" style="padding: 10px; background: #DC2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0; transition: all 0.2s ease;" title="Delete workout">🗑️</button>
+                </div>
+              `;
+            })
+            .join('');
+
+          console.log('Rendered HTML:', html);
+          document.getElementById('day-workouts').innerHTML = html;
+        })
+        .catch((error) => {
+          console.error('Error fetching day workouts:', error);
+          document.getElementById('day-workouts').innerHTML = '<p>Error loading workouts</p>';
+        });
+    }
+
+    // Store current viewing workout data
+    let currentViewingWorkout = null;
+
+    function showWorkoutDetails(username, exercises, mood, notes, workoutId) {
+      console.log('showWorkoutDetails called:', { username, exercises, mood, notes, workoutId });
+      const modal = document.getElementById('workout-modal');
+      document.getElementById('modal-username').textContent = username;
+
+      // Store current workout for edit/delete
+      currentViewingWorkout = { username, exercises, mood, notes, workoutId };
+
+      // Parse exercises if it's a string
+      let parsedExercises = exercises;
+      if (typeof exercises === 'string') {
+        try {
+          parsedExercises = JSON.parse(exercises);
+        } catch (e) {
+          console.error('Failed to parse exercises:', e);
+          parsedExercises = [];
+        }
+      }
+
+      console.log('Parsed exercises:', parsedExercises);
+
+      let content = `
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Exercises</h3>
+          ${Array.isArray(parsedExercises) ? parsedExercises.map((ex) => `
+            <div style="background: var(--surface-light); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--primary);">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${ex.name}</div>
+              <div style="color: var(--text-secondary); font-size: 13px;">
+                ${ex.sets ? `<div>Sets: ${ex.sets}</div>` : ''}
+                ${ex.reps ? `<div>Reps: ${ex.reps}</div>` : ''}
+                ${ex.duration ? `<div>Duration: ${ex.duration} min</div>` : ''}
+              </div>
+            </div>
+          `).join('') : '<p>No exercises</p>'}
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Mood</h3>
+          <div style="font-size: 40px; text-align: center;">${mood}</div>
+        </div>
+      `;
+
+      if (notes && notes.trim() !== '') {
+        content += `
+          <div>
+            <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Notes</h3>
+            <div style="background: var(--surface-light); padding: 12px; border-radius: 8px; color: var(--text-primary); line-height: 1.5;">${notes}</div>
+          </div>
+        `;
+      }
+
+      console.log('Modal content:', content);
+      document.getElementById('modal-content').innerHTML = content;
+      modal.style.display = 'block';
+    }
+
+    // Modal close handler
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('workout-modal').style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('workout-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'workout-modal') {
+        document.getElementById('workout-modal').style.display = 'none';
+      }
+    });
+
+    // Delete workout function
+    async function deleteWorkout(workoutId, event) {
+      if (event) {
+        event.stopPropagation(); // Prevent triggering showWorkoutDetails
+      }
+
+      if (!confirm('Are you sure you want to delete this workout?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/workouts/${workoutId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+          alert('Workout deleted successfully!');
+          document.getElementById('workout-modal').style.display = 'none';
+          // Reload the current date to refresh the list
+          const selectedDateEl = document.getElementById('selected-date');
+          if (selectedDateEl && selectedDateEl.textContent) {
+            const dateObj = new Date(selectedDateEl.textContent);
+            const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+            showDayDetails(dateStr);
+            loadGroupWorkouts();
+          }
+        } else {
+          const data = await response.json();
+          alert('Error deleting workout: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error deleting workout:', error);
+        alert('Failed to delete workout');
+      }
+    }
+
+    // Open edit modal
+    function openEditModal() {
+      if (!currentViewingWorkout) return;
+
+      const { username, exercises, mood, notes, workoutId } = currentViewingWorkout;
+      let parsedExercises = exercises;
+      if (typeof exercises === 'string') {
+        try {
+          parsedExercises = JSON.parse(exercises);
+        } catch (e) {
+          parsedExercises = [];
+        }
+      }
+
+      // Build edit form
+      let editHTML = `
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Exercises</h3>
+          <div id="edit-exercises-list">
+            ${Array.isArray(parsedExercises) ? parsedExercises.map((ex, idx) => `
+              <div class="exercise-item-edit" data-idx="${idx}" style="background: var(--surface-light); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                  <input type="text" class="edit-exercise-name" value="${ex.name}" placeholder="Exercise name" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+                  <button class="edit-remove-exercise" data-idx="${idx}" style="padding: 8px 12px; background: #DC2626; color: white; border: none; border-radius: 6px; cursor: pointer;">Remove</button>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <input type="number" class="edit-exercise-sets" value="${ex.sets || 0}" placeholder="Sets" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+                  <input type="number" class="edit-exercise-reps" value="${ex.reps || 0}" placeholder="Reps" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+                  <input type="number" class="edit-exercise-duration" value="${ex.duration || 0}" placeholder="Duration (min)" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+                </div>
+              </div>
+            `).join('') : ''}
+          </div>
+          <button id="add-edit-exercise" style="width: 100%; padding: 10px; background: var(--surface-light); color: var(--primary); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 12px;">+ Add Exercise</button>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Mood</h3>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;" id="edit-mood-selector">
+            ${['😍', '😌', '😮‍💨', '😴'].map((m) => `
+              <button class="edit-mood-btn" data-mood="${m}" style="flex: 1; min-width: 50px; padding: 12px; border: 2px solid ${m === mood ? 'var(--primary)' : 'var(--border)'}; background: ${m === mood ? 'rgba(0, 102, 204, 0.15)' : 'var(--surface-light)'}; border-radius: 8px; font-size: 28px; cursor: pointer; transition: all 0.2s ease;">${m}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div>
+          <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Notes</h3>
+          <textarea id="edit-notes" placeholder="Notes about your workout..." style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--text-primary); font-family: inherit; resize: vertical; min-height: 80px;">${notes || ''}</textarea>
+        </div>
+      `;
+
+      document.getElementById('edit-modal-content').innerHTML = editHTML;
+
+      // Setup edit mood selector
+      let editCurrentMood = mood;
+      document.querySelectorAll('.edit-mood-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.edit-mood-btn').forEach((b) => {
+            b.style.borderColor = 'var(--border)';
+            b.style.background = 'var(--surface-light)';
+          });
+          btn.style.borderColor = 'var(--primary)';
+          btn.style.background = 'rgba(0, 102, 204, 0.15)';
+          editCurrentMood = btn.dataset.mood;
+        });
+      });
+
+      // Setup remove exercise buttons
+      document.querySelectorAll('.edit-remove-exercise').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = btn.dataset.idx;
+          document.querySelector(`.exercise-item-edit[data-idx="${idx}"]`).remove();
+        });
+      });
+
+      // Setup add exercise button
+      document.getElementById('add-edit-exercise').addEventListener('click', () => {
+        const listDiv = document.getElementById('edit-exercises-list');
+        const newIdx = Date.now();
+        const newExerciseHTML = `
+          <div class="exercise-item-edit" data-idx="${newIdx}" style="background: var(--surface-light); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <input type="text" class="edit-exercise-name" value="" placeholder="Exercise name" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+              <button class="edit-remove-exercise" data-idx="${newIdx}" style="padding: 8px 12px; background: #DC2626; color: white; border: none; border-radius: 6px; cursor: pointer;">Remove</button>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="number" class="edit-exercise-sets" value="0" placeholder="Sets" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+              <input type="number" class="edit-exercise-reps" value="0" placeholder="Reps" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+              <input type="number" class="edit-exercise-duration" value="0" placeholder="Duration (min)" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+            </div>
+          </div>
+        `;
+        listDiv.insertAdjacentHTML('beforeend', newExerciseHTML);
+
+        // Reattach remove handler
+        document.querySelector(`.exercise-item-edit[data-idx="${newIdx}"] .edit-remove-exercise`).addEventListener('click', () => {
+          document.querySelector(`.exercise-item-edit[data-idx="${newIdx}"]`).remove();
+        });
+      });
+
+      // Setup save button
+      document.getElementById('save-workout-btn').onclick = async () => {
+        // Collect updated exercises
+        const editedExercises = [];
+        document.querySelectorAll('.exercise-item-edit').forEach((item) => {
+          const name = item.querySelector('.edit-exercise-name').value;
+          const sets = parseInt(item.querySelector('.edit-exercise-sets').value) || 0;
+          const reps = parseInt(item.querySelector('.edit-exercise-reps').value) || 0;
+          const duration = parseInt(item.querySelector('.edit-exercise-duration').value) || 0;
+
+          if (name && (sets || reps || duration)) {
+            editedExercises.push({ name, sets, reps, duration });
+          }
+        });
+
+        if (editedExercises.length === 0) {
+          alert('Please add at least one exercise');
+          return;
+        }
+
+        const editedNotes = document.getElementById('edit-notes').value;
+
+        try {
+          const response = await fetch(`/api/workouts/${workoutId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              exercises: editedExercises,
+              mood: editCurrentMood,
+              notes: editedNotes,
+            }),
+          });
+
+          if (response.ok) {
+            alert('Workout updated successfully!');
+            document.getElementById('edit-modal').style.display = 'none';
+            document.getElementById('workout-modal').style.display = 'none';
+            // Reload the current date to refresh the list
+            const selectedDateEl = document.getElementById('selected-date');
+            if (selectedDateEl && selectedDateEl.textContent) {
+              const dateObj = new Date(selectedDateEl.textContent);
+              const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+              showDayDetails(dateStr);
+              loadGroupWorkouts();
+            }
+          } else {
+            const data = await response.json();
+            alert('Error updating workout: ' + (data.error || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Error updating workout:', error);
+          alert('Failed to update workout');
+        }
+      };
+
+      document.getElementById('cancel-edit-btn').onclick = () => {
+        document.getElementById('edit-modal').style.display = 'none';
+      };
+
+      document.getElementById('close-edit-modal').addEventListener('click', () => {
+        document.getElementById('edit-modal').style.display = 'none';
+      });
+
+      // Show edit modal
+      document.getElementById('edit-modal').style.display = 'block';
+      document.getElementById('workout-modal').style.display = 'none';
+    }
+
+    // Edit button handler
+    document.getElementById('edit-workout-btn').addEventListener('click', openEditModal);
+
+    // Delete button handler
+    document.getElementById('delete-workout-btn').addEventListener('click', () => {
+      if (currentViewingWorkout) {
+        deleteWorkout(currentViewingWorkout.workoutId);
+      }
+    });
+
+    // Initialize with first exercise
+    addExercise();
+    renderCalendar();
+  </script>
+</body>
+</html>
