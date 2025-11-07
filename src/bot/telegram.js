@@ -168,6 +168,7 @@ function initializeTelegramBot() {
   });
 
   // Set up bot commands and webhook for all scopes
+  // This is non-blocking so the server can start even if Telegram API is slow
   const setupBotAndWebhook = async () => {
     try {
       const commands = [
@@ -181,6 +182,7 @@ function initializeTelegramBot() {
         }
       ];
 
+      console.log('Setting up bot commands...');
       // Set commands for private chats
       await bot.telegram.setMyCommands(commands, { scope: { type: 'default' } });
 
@@ -195,8 +197,9 @@ function initializeTelegramBot() {
         : null;
 
       if (webhookUrl) {
+        console.log(`Setting webhook to: ${webhookUrl}`);
         await bot.telegram.setWebhook(webhookUrl);
-        console.log(`Webhook registered at: ${webhookUrl}`);
+        console.log(`Webhook registered successfully`);
       } else {
         console.warn('AZURE_APP_URL not set - webhook not registered. Set it for production.');
       }
@@ -205,9 +208,12 @@ function initializeTelegramBot() {
     }
   };
 
-  setupBotAndWebhook();
+  // Start setup in background - don't block initialization
+  setupBotAndWebhook().catch(err => {
+    console.error('Unhandled error in setupBotAndWebhook:', err);
+  });
 
-  console.log('Telegram bot initialized');
+  console.log('Telegram bot initialized successfully');
   return bot;
 }
 
