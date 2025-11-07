@@ -8,6 +8,11 @@ console.log('[Startup] Starting Spot Buddy server...');
 console.log('[Startup] Node version:', process.version);
 console.log('[Startup] Environment:', process.env.NODE_ENV || 'development');
 console.log('[Startup] Port:', process.env.PORT || process.env.WEBSITE_PORT || 8080);
+console.log('[Startup] TELEGRAM_BOT_TOKEN set:', !!process.env.TELEGRAM_BOT_TOKEN);
+console.log('[Startup] SUPABASE_URL set:', !!process.env.SUPABASE_URL);
+console.log('[Startup] SUPABASE_KEY set:', !!process.env.SUPABASE_KEY);
+console.log('[Startup] AZURE_APP_URL:', process.env.AZURE_APP_URL || 'not set');
+console.log('[Startup] MINI_APP_URL:', process.env.MINI_APP_URL || 'not set');
 
 // Set default port for Azure
 if (!process.env.PORT && !process.env.WEBSITE_PORT) {
