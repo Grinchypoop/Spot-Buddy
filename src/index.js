@@ -36,6 +36,7 @@ try {
 // Webhook endpoint for Telegram
 app.post('/webhook', async (req, res) => {
   console.log('[Webhook] Incoming request received');
+  console.log('[Webhook] Full request body:', JSON.stringify(req.body, null, 2));
   try {
     const bot = getBot();
     if (!bot) {
@@ -46,8 +47,13 @@ app.post('/webhook', async (req, res) => {
 
     // Log incoming updates for debugging
     console.log('[Webhook] Bot is initialized, processing update');
+    console.log('[Webhook] Update type:', req.body.update_id);
+
     if (req.body.message?.text) {
       console.log(`[Webhook] Received message: ${req.body.message.text}`);
+      console.log(`[Webhook] Chat type: ${req.body.message.chat.type}`);
+      console.log(`[Webhook] Chat ID: ${req.body.message.chat.id}`);
+      console.log(`[Webhook] From: ${req.body.message.from.first_name}`);
     }
     if (req.body.callback_query) {
       console.log(`[Webhook] Received callback query`);

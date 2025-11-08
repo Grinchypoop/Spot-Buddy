@@ -163,7 +163,13 @@ function initializeTelegramBot() {
 
   // Log all updates for debugging
   bot.use((ctx, next) => {
-    console.log('[Bot] Update received:', { message: ctx.message?.text, type: ctx.updateType });
+    console.log('[Bot] Update received:', {
+      message: ctx.message?.text,
+      type: ctx.updateType,
+      chatType: ctx.chat?.type,
+      chatId: ctx.chat?.id,
+      from: ctx.from?.first_name
+    });
     return next();
   });
 
@@ -220,10 +226,7 @@ function initializeTelegramBot() {
             // Now register the new webhook with explicit options
             console.log('Registering new webhook...');
             await bot.telegram.setWebhook(
-              webhookUrl,
-              {
-                allowed_updates: ['message', 'callback_query', 'web_app_data']
-              }
+              webhookUrl
             );
             console.log(`Webhook registered successfully`);
 
