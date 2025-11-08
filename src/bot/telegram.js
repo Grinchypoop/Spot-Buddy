@@ -262,22 +262,6 @@ function initializeTelegramBot() {
   // Start setup in background with no awaiting
   setImmediate(setupBotAndPolling);
 
-  // Start polling for pending updates every 2 seconds as a fallback
-  setInterval(async () => {
-    try {
-      const updates = await bot.telegram.getUpdates({ timeout: 0 });
-      for (const update of updates) {
-        try {
-          await bot.handleUpdate(update);
-        } catch (err) {
-          console.error('Error handling update:', err.message);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching updates:', err.message);
-    }
-  }, 2000);
-
   console.log('Telegram bot initialized successfully');
   return bot;
 }
