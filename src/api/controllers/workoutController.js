@@ -2,10 +2,19 @@ const { getSupabaseClient } = require('../../db/supabase');
 
 async function createWorkout(req, res) {
   try {
-    const { user_id, group_id, exercises, mood, notes, timezone } = req.body;
+    const { user_id, group_id, exercises, cardio, mood, notes, timezone } = req.body;
 
-    if (!user_id || !exercises || exercises.length === 0) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validate required fields - at least one of exercises, cardio, or mood
+    if (!user_id || !group_id) {
+      return res.status(400).json({ error: 'Missing user_id or group_id' });
+    }
+
+    const hasExercises = exercises && exercises.length > 0;
+    const hasCardio = cardio && (cardio.type || cardio.duration);
+    const hasMood = mood && mood.trim() !== '';
+
+    if (!hasExercises && !hasCardio && !hasMood) {
+      return res.status(400).json({ error: 'Please log at least one exercise, cardio, or select a mood' });
     }
 
     const supabase = getSupabaseClient();
@@ -17,7 +26,8 @@ async function createWorkout(req, res) {
         {
           user_id,
           group_id,
-          exercises: JSON.stringify(exercises),
+          exercises: JSON.stringify(exercises || []),
+          cardio: cardio ? JSON.stringify(cardio) : null,
           mood,
           notes,
           timezone,
