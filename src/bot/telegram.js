@@ -207,13 +207,49 @@ function initializeTelegramBot() {
           console.warn('Could not set bot commands:', cmdErr.message);
         }
 
-        // Delete any existing webhook and switch to polling
-        try {
-          console.log('Removing webhook and switching to polling mode...');
-          await bot.telegram.deleteWebhook({ drop_pending_updates: false });
-          console.log('Webhook deleted, polling mode enabled');
-        } catch (err) {
-          console.warn('Could not delete webhook:', err.message);
+        // Set webhook URL - use environment variable or fallback
+        const webhookUrl = process.env.AZURE_APP_URL
+          ? `${process.env.AZURE_APP_URL}/webhook`
+          : null;
+
+        if (webhookUrl) {
+          console.log(`Setting webhook to: ${webhookUrl}`);
+          try {
+            // First, delete any existing webhook to start fresh
+            console.log('Deleting any existing webhook...');
+            await bot.telegram.deleteWebhook({ drop_pending_updates: false });
+            console.log('Existing webhook deleted');
+
+            // Small delay to ensure deletion is processed
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Now register the new webhook
+            console.log('Registering new webhook...');
+            await bot.telegram.setWebhook(webhookUrl);
+            console.log(`Webhook registered successfully`);
+
+            // Verify the webhook was set
+            const webhookInfo = await bot.telegram.getWebhookInfo();
+            console.log('Webhook info:', {
+              url: webhookInfo.url,
+              has_custom_certificate: webhookInfo.has_custom_certificate,
+              pending_update_count: webhookInfo.pending_update_count,
+              ip_address: webhookInfo.ip_address,
+              last_error_date: webhookInfo.last_error_date,
+              last_error_message: webhookInfo.last_error_message
+            });
+
+            // If there's a last_error, log it prominently
+            if (webhookInfo.last_error_message) {
+              console.error('⚠️  WEBHOOK ERROR:', webhookInfo.last_error_message);
+              console.error('⚠️  Last error date:', new Date(webhookInfo.last_error_date * 1000));
+            }
+          } catch (webhookErr) {
+            console.error('Could not register webhook:', webhookErr.message);
+            console.error('Full error:', webhookErr);
+          }
+        } else {
+          console.warn('AZURE_APP_URL not set - webhook not registered. Set it for production.');
         }
       })();
 
@@ -225,13 +261,6 @@ function initializeTelegramBot() {
 
   // Start setup in background with no awaiting
   setImmediate(setupBotAndPolling);
-
-  // Start polling for updates in background (non-blocking)
-  setImmediate(() => {
-    bot.launch().catch(err => {
-      console.error('Error launching bot polling:', err.message);
-    });
-  });
 
   console.log('Telegram bot initialized successfully');
   return bot;

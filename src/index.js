@@ -33,10 +33,25 @@ try {
   // Don't exit - continue without the bot
 }
 
-// Webhook endpoint for Telegram (kept for backward compatibility but not used in polling mode)
+// Webhook endpoint for Telegram
 app.post('/webhook', async (req, res) => {
-  console.log('[Webhook] Incoming request received (polling mode - should not receive webhooks)');
-  res.status(200).send('ok');
+  console.log('[Webhook] Incoming request received');
+  try {
+    const bot = getBot();
+    if (!bot) {
+      console.error('[Webhook] ERROR: Bot not initialized when webhook arrived!');
+      res.status(200).send('ok');
+      return;
+    }
+
+    console.log('[Webhook] Bot is initialized, processing update');
+    await bot.handleUpdate(req.body);
+    console.log('[Webhook] Update handled successfully');
+    res.status(200).send('ok');
+  } catch (error) {
+    console.error('[Webhook] Error handling webhook:', error.message);
+    res.status(500).send('error');
+  }
 });
 
 // API Routes
