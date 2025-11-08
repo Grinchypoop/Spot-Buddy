@@ -620,17 +620,31 @@
 
       let content = `
         <div style="margin-bottom: 20px;">
-          <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Exercises</h3>
-          ${Array.isArray(parsedExercises) ? parsedExercises.map((ex) => `
-            <div style="background: var(--surface-light); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--primary);">
-              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${ex.name}</div>
-              <div style="color: var(--text-secondary); font-size: 13px;">
-                ${ex.sets ? `<div>Sets: ${ex.sets}</div>` : ''}
-                ${ex.reps ? `<div>Reps: ${ex.reps}</div>` : ''}
-                ${ex.weight ? `<div>Weight: ${ex.weight} lbs/kg</div>` : ''}
-              </div>
-            </div>
-          `).join('') : '<p>No exercises</p>'}
+          <h3 style="color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 12px;">Exercises & Cardio</h3>
+          ${Array.isArray(parsedExercises) ? parsedExercises.map((ex) => {
+            if (ex.type === 'cardio') {
+              return `
+                <div style="background: var(--surface-light); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--primary);">
+                  <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">🏃 ${ex.type.charAt(0).toUpperCase() + ex.type.slice(1)}</div>
+                  <div style="color: var(--text-secondary); font-size: 13px;">
+                    ${ex.type ? `<div>Type: ${ex.type}</div>` : ''}
+                    ${ex.duration ? `<div>Duration: ${ex.duration} min</div>` : ''}
+                  </div>
+                </div>
+              `;
+            } else {
+              return `
+                <div style="background: var(--surface-light); padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid var(--primary);">
+                  <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${ex.name}</div>
+                  <div style="color: var(--text-secondary); font-size: 13px;">
+                    ${ex.sets ? `<div>Sets: ${ex.sets}</div>` : ''}
+                    ${ex.reps ? `<div>Reps: ${ex.reps}</div>` : ''}
+                    ${ex.weight ? `<div>Weight: ${ex.weight} lbs/kg</div>` : ''}
+                  </div>
+                </div>
+              `;
+            }
+          }).join('') : '<p>No exercises or cardio</p>'}
         </div>
 
         <div style="margin-bottom: 20px;">

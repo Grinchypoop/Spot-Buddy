@@ -4,7 +4,7 @@ async function createWorkout(req, res) {
   try {
     const { user_id, group_id, exercises, cardio, mood, notes, timezone } = req.body;
 
-    // Validate required fields - at least one of exercises, cardio, or mood
+    // Validate required fields
     if (!user_id || !group_id) {
       return res.status(400).json({ error: 'Missing user_id or group_id' });
     }
@@ -19,6 +19,12 @@ async function createWorkout(req, res) {
 
     const supabase = getSupabaseClient();
 
+    // Combine exercises and cardio into a single exercises array for storage
+    let allExercises = exercises || [];
+    if (hasCardio) {
+      allExercises = [...allExercises, { type: 'cardio', ...cardio }];
+    }
+
     // Save workout with group_id to satisfy database constraint
     const { data, error } = await supabase
       .from('workouts')
@@ -26,8 +32,7 @@ async function createWorkout(req, res) {
         {
           user_id,
           group_id,
-          exercises: JSON.stringify(exercises || []),
-          cardio: cardio ? JSON.stringify(cardio) : null,
+          exercises: JSON.stringify(allExercises),
           mood,
           notes,
           timezone,
