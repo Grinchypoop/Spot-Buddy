@@ -119,9 +119,9 @@ async function getGroupWorkouts(req, res) {
     }
 
     if (month && year) {
-      // Create UTC date range for the month
-      const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0)).toISOString();
-      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999)).toISOString();
+      // Create date range for the month (format: YYYY-MM-DD)
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
       console.log(`Date range: ${startDate} to ${endDate}`);
       query = query.gte('date', startDate).lte('date', endDate);
     }
