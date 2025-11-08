@@ -523,28 +523,52 @@
             return;
           }
 
+          // Store workout data in a map for safe access
+          const workoutMap = new Map();
+
           const html = workouts
             .map((workout) => {
               const exercises = Array.isArray(workout.exercises) ? workout.exercises : JSON.parse(workout.exercises);
               const username = workout.users?.username || 'User';
-              const notes = (workout.notes || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-              const exercisesJson = JSON.stringify(exercises).replace(/"/g, '&quot;');
+              const notes = workout.notes || '';
+
+              // Store workout data safely
+              workoutMap.set(workout.id, { username, exercises, mood: workout.mood, notes });
 
               return `
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                  <div class="workout-card" style="cursor: pointer; flex: 1;" onclick="showWorkoutDetails('${username}', '${exercisesJson}', '${workout.mood}', '${notes}', ${workout.id})">
+                  <div class="workout-card" style="cursor: pointer; flex: 1;" data-workout-id="${workout.id}">
                     <div class="workout-user">${username}</div>
                     <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Click to view details</div>
                     <div class="workout-mood" style="text-align: center; font-size: 24px;">${workout.mood}</div>
                   </div>
-                  <button onclick="deleteWorkout(${workout.id}, event)" style="padding: 10px; background: #DC2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0; transition: all 0.2s ease;" title="Delete workout">🗑️</button>
+                  <button data-delete-id="${workout.id}" style="padding: 10px; background: #DC2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0; transition: all 0.2s ease;" title="Delete workout">🗑️</button>
                 </div>
               `;
             })
             .join('');
 
           console.log('Rendered HTML:', html);
-          document.getElementById('day-workouts').innerHTML = html;
+          const dayWorkoutsDiv = document.getElementById('day-workouts');
+          dayWorkoutsDiv.innerHTML = html;
+
+          // Attach event listeners using event delegation
+          dayWorkoutsDiv.addEventListener('click', (e) => {
+            const workoutCard = e.target.closest('[data-workout-id]');
+            if (workoutCard) {
+              const workoutId = parseInt(workoutCard.dataset.workoutId);
+              const workout = workoutMap.get(workoutId);
+              if (workout) {
+                showWorkoutDetails(workout.username, workout.exercises, workout.mood, workout.notes, workoutId);
+              }
+            }
+
+            const deleteBtn = e.target.closest('[data-delete-id]');
+            if (deleteBtn) {
+              const workoutId = parseInt(deleteBtn.dataset.deleteId);
+              deleteWorkout(workoutId, e);
+            }
+          });
         })
         .catch((error) => {
           console.error('Error fetching day workouts:', error);
