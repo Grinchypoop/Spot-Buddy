@@ -226,8 +226,12 @@ function initializeTelegramBot() {
   // Start setup in background with no awaiting
   setImmediate(setupBotAndPolling);
 
-  // Start polling for updates
-  bot.launch();
+  // Start polling for updates in background (non-blocking)
+  setImmediate(() => {
+    bot.launch().catch(err => {
+      console.error('Error launching bot polling:', err.message);
+    });
+  });
 
   console.log('Telegram bot initialized successfully');
   return bot;
