@@ -118,14 +118,7 @@ async function getGroupWorkouts(req, res) {
       query = query.in('user_id', memberIds);
     }
 
-    // First, get all workouts without date filter to see what we have
-    const { data: allData } = await query.order('date', { ascending: false });
-    console.log(`Total workouts for members: ${allData?.length || 0}`);
-    if (allData && allData.length > 0) {
-      console.log('All workout dates:', allData.map(w => w.date));
-    }
-
-    // Now apply date filter if provided
+    // Apply date filter if provided (must be before executing the query)
     if (month && year) {
       // Create date range for the month (format: YYYY-MM-DD)
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
@@ -146,7 +139,7 @@ async function getGroupWorkouts(req, res) {
 
     console.log(`Found ${data?.length || 0} workouts`);
     if (data && data.length > 0) {
-      console.log('Sample workouts:', data.slice(0, 3).map(w => ({ id: w.id, date: w.date, user_id: w.user_id })));
+      console.log('Workout dates:', data.map(w => ({ date: w.date, user_id: w.user_id })));
     }
 
     // Fetch user data for each workout
