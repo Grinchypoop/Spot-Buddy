@@ -10,12 +10,13 @@ async function createWorkout(req, res) {
 
     const supabase = getSupabaseClient();
 
-    // Save workout without group_id - workouts are user-level and visible across all groups
+    // Save workout with group_id to satisfy database constraint
     const { data, error } = await supabase
       .from('workouts')
       .insert([
         {
           user_id,
+          group_id,
           exercises: JSON.stringify(exercises),
           mood,
           notes,
