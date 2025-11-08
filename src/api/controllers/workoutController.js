@@ -1,4 +1,5 @@
 const { getSupabaseClient } = require('../../db/supabase');
+const { DateTime } = require('luxon'); // ✅ ADDED: Import luxon for timezone handling
 
 async function createWorkout(req, res) {
   try {
@@ -25,6 +26,10 @@ async function createWorkout(req, res) {
       allExercises = [...allExercises, { type: 'cardio', ...cardio }];
     }
 
+    // ✅ ADDED: Get current date/time in user's timezone
+    const userTimezone = timezone || 'Asia/Singapore'; // Default to Singapore if not provided
+    const localDate = DateTime.now().setZone(userTimezone).toISODate(); // Just "2025-11-09"
+
     // Save workout with group_id to satisfy database constraint
     const { data, error } = await supabase
       .from('workouts')
@@ -36,7 +41,7 @@ async function createWorkout(req, res) {
           mood,
           notes,
           timezone,
-          date: new Date().toISOString(),
+          date: localDate, // ✅ CHANGED: Now uses user's local timezone instead of UTC
         },
       ])
       .select();
