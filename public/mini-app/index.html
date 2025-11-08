@@ -467,9 +467,10 @@
           // workout.date is already in "YYYY-MM-DD" format
           const date = workout.date;
 
-          console.log('Processing workout with date:', date);
+          workouts.forEach((workout) => {
+  const date = workout.date.split('T')[0]; // ✅ Converts "2025-11-09T00:00:00" to "2025-11-09"
 
-          const username = workout.users?.username || 'Unknown User';
+  console.log('Processing workout with date:', date);
 
           if (!dateUserMap[date]) {
             dateUserMap[date] = [];
