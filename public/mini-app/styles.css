@@ -8,7 +8,7 @@
   --primary: #3DDC97;
   --primary-dark: #00FFB3;
   --background: #000000;
-  --surface: #0A0A0A;
+  --surface: #0F0F0F;
   --surface-light: #1A1A1A;
   --text-primary: #E2E2E2;
   --text-secondary: #A0A4AD;
@@ -39,6 +39,23 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+/* App Header */
+.app-header {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.app-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 1px;
 }
 
 /* Navigation Bar */

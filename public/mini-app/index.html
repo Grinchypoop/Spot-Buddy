@@ -9,10 +9,15 @@
 </head>
 <body>
   <div id="app">
+    <!-- Header with App Name -->
+    <div class="app-header">
+      <h1 class="app-title">Spot Buddy</h1>
+    </div>
+
     <!-- Navigation Bar -->
     <nav class="navbar">
       <button class="nav-btn active" data-tab="log">📝 Log</button>
-      <button class="nav-btn" data-tab="leaderboard">🏆 Leaderboard</button>
+      <button class="nav-btn" data-tab="leaderboard">🔥 Streaks</button>
     </nav>
 
     <!-- Tabs Container -->
@@ -26,6 +31,14 @@
             <h2>Add Exercises</h2>
             <div class="exercises-list" id="exercises-list"></div>
             <button class="btn-secondary" id="add-exercise-btn">+ Add Exercise</button>
+          </div>
+
+          <div class="section">
+            <h2>Add Cardio</h2>
+            <div style="display: flex; gap: 12px; flex-direction: column;">
+              <input type="text" id="cardio-type" placeholder="What kind of cardio? (optional)" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; background-color: var(--background); color: var(--text-primary); font-size: 14px; font-family: inherit;" />
+              <input type="number" id="cardio-duration" placeholder="Duration (minutes) (optional)" min="0" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; background-color: var(--background); color: var(--text-primary); font-size: 14px; font-family: inherit;" />
+            </div>
           </div>
 
           <div class="section">
@@ -292,13 +305,17 @@
         }
       });
 
-      if (exercises.length === 0) {
-        alert('Please add at least one exercise');
-        return;
-      }
+      // Collect cardio data (optional)
+      const cardioType = document.getElementById('cardio-type').value || '';
+      const cardioDuration = parseInt(document.getElementById('cardio-duration').value) || 0;
 
-      if (!currentMood) {
-        alert('Please select a mood');
+      const cardio = {};
+      if (cardioType) cardio.type = cardioType;
+      if (cardioDuration > 0) cardio.duration = cardioDuration;
+
+      // Check if user has at least something logged
+      if (exercises.length === 0 && Object.keys(cardio).length === 0 && !currentMood) {
+        alert('Please log at least one exercise, cardio, or select a mood');
         return;
       }
 
@@ -322,7 +339,8 @@
             user_id: userId,
             group_id: chatId,
             exercises,
-            mood: currentMood,
+            cardio: Object.keys(cardio).length > 0 ? cardio : null,
+            mood: currentMood || '',
             notes,
             timezone,
           }),
