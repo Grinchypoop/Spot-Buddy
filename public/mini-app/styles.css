@@ -7,7 +7,7 @@
 :root {
   --primary: #3DDC97;
   --primary-dark: #00FFB3;
-  --background: #0C0E13;
+  --background: #11121A;
   --surface: #181B25;
   --surface-light: #1E212D;
   --text-primary: #E2E2E2;
@@ -27,6 +27,9 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--background);
+  background-image:
+    radial-gradient(circle, #2A2E38 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
   color: var(--text-primary);
   padding-bottom: 80px;
 }
