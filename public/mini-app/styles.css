@@ -193,7 +193,7 @@ h2 {
 
 .exercise-sets,
 .exercise-reps,
-.exercise-duration {
+.exercise-weight {
   flex: 1;
   padding: 8px 10px;
   border: 1px solid var(--border);
@@ -208,7 +208,7 @@ h2 {
 
 .exercise-sets:focus,
 .exercise-reps:focus,
-.exercise-duration:focus {
+.exercise-weight:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 8px rgba(61, 220, 151, 0.3);

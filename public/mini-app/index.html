@@ -230,9 +230,9 @@
             />
             <input
               type="number"
-              class="exercise-duration"
-              placeholder="Duration"
-              min="1"
+              class="exercise-weight"
+              placeholder="Weight (lbs/kg)"
+              min="0"
               data-id="${exerciseId}"
             />
             <button class="btn-remove" data-id="${exerciseId}">✕</button>
@@ -298,10 +298,10 @@
         const name = item.querySelector('.exercise-name').value;
         const sets = parseInt(item.querySelector('.exercise-sets').value) || 0;
         const reps = parseInt(item.querySelector('.exercise-reps').value) || 0;
-        const duration = parseInt(item.querySelector('.exercise-duration').value) || 0;
+        const weight = parseInt(item.querySelector('.exercise-weight').value) || 0;
 
-        if (name && (sets || reps || duration)) {
-          exercises.push({ name, sets, reps, duration });
+        if (name && (sets || reps || weight)) {
+          exercises.push({ name, sets, reps, weight });
         }
       });
 
@@ -627,7 +627,7 @@
               <div style="color: var(--text-secondary); font-size: 13px;">
                 ${ex.sets ? `<div>Sets: ${ex.sets}</div>` : ''}
                 ${ex.reps ? `<div>Reps: ${ex.reps}</div>` : ''}
-                ${ex.duration ? `<div>Duration: ${ex.duration} min</div>` : ''}
+                ${ex.weight ? `<div>Weight: ${ex.weight} lbs/kg</div>` : ''}
               </div>
             </div>
           `).join('') : '<p>No exercises</p>'}
@@ -730,7 +730,7 @@
                 <div style="display: flex; gap: 8px;">
                   <input type="number" class="edit-exercise-sets" value="${ex.sets || 0}" placeholder="Sets" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
                   <input type="number" class="edit-exercise-reps" value="${ex.reps || 0}" placeholder="Reps" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
-                  <input type="number" class="edit-exercise-duration" value="${ex.duration || 0}" placeholder="Duration (min)" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+                  <input type="number" class="edit-exercise-weight" value="${ex.weight || 0}" placeholder="Weight (lbs/kg)" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
                 </div>
               </div>
             `).join('') : ''}
@@ -790,7 +790,7 @@
             <div style="display: flex; gap: 8px;">
               <input type="number" class="edit-exercise-sets" value="0" placeholder="Sets" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
               <input type="number" class="edit-exercise-reps" value="0" placeholder="Reps" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
-              <input type="number" class="edit-exercise-duration" value="0" placeholder="Duration (min)" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
+              <input type="number" class="edit-exercise-weight" value="0" placeholder="Weight (lbs/kg)" min="0" style="flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--text-primary);" />
             </div>
           </div>
         `;
@@ -810,10 +810,10 @@
           const name = item.querySelector('.edit-exercise-name').value;
           const sets = parseInt(item.querySelector('.edit-exercise-sets').value) || 0;
           const reps = parseInt(item.querySelector('.edit-exercise-reps').value) || 0;
-          const duration = parseInt(item.querySelector('.edit-exercise-duration').value) || 0;
+          const weight = parseInt(item.querySelector('.edit-exercise-weight').value) || 0;
 
-          if (name && (sets || reps || duration)) {
-            editedExercises.push({ name, sets, reps, duration });
+          if (name && (sets || reps || weight)) {
+            editedExercises.push({ name, sets, reps, weight });
           }
         });
 
