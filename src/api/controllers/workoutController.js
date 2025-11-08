@@ -121,7 +121,10 @@ async function getGroupWorkouts(req, res) {
     if (month && year) {
       // Create date range for the month (format: YYYY-MM-DD)
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`;
+      // Get last day of month: new Date(year, month, 0) gives last day of previous month
+      // Since month is 1-indexed, we need new Date(year, month, 0) which gives us the last day
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       console.log(`Date range: ${startDate} to ${endDate}`);
       query = query.gte('date', startDate).lte('date', endDate);
     }
