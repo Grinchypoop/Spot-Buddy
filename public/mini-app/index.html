@@ -464,16 +464,22 @@
         // Build map of date -> users with workouts
         const dateUserMap = {};
         workouts.forEach((workout) => {
-          // workout.date is already in "YYYY-MM-DD" format
-          const date = workout.date.split('T')[0];
+          try {
+            // Extract just the date part (YYYY-MM-DD) from the timestamp
+            const date = workout.date.split('T')[0];
 
-  console.log('Processing workout with date:', date);
+            console.log('Processing workout with date:', date);
 
-          if (!dateUserMap[date]) {
-            dateUserMap[date] = [];
-          }
-          if (!dateUserMap[date].includes(username)) {
-            dateUserMap[date].push(username);
+            const username = workout.users?.username || 'Unknown User';
+
+            if (!dateUserMap[date]) {
+              dateUserMap[date] = [];
+            }
+            if (!dateUserMap[date].includes(username)) {
+              dateUserMap[date].push(username);
+            }
+          } catch (error) {
+            console.error('Error processing workout:', workout, error);
           }
         });
 
