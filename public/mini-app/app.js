@@ -10,12 +10,32 @@ let appState = {
   exercises: [],
 };
 
-// Get URL parameters
+// Get URL parameters and Telegram user info
 function getUrlParams() {
   const params = new URLSearchParams(window.location.search);
-  appState.userId = params.get('user_id');
   appState.groupId = params.get('group_id');
   const tab = params.get('tab') || 'workout';
+
+  // Get actual user ID from Telegram Web App (current logged-in user)
+  // This ensures each user's own ID is used, not the ID from the shared link
+  const initData = tg.initData;
+  if (initData) {
+    try {
+      const decoded = new URLSearchParams(initData);
+      const userStr = decoded.get('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        appState.userId = userData.id;
+      }
+    } catch (error) {
+      console.error('Error parsing Telegram user data:', error);
+      // Fallback to URL parameter if parsing fails
+      appState.userId = params.get('user_id');
+    }
+  } else {
+    // Fallback for development/testing
+    appState.userId = params.get('user_id');
+  }
 
   if (tab === 'streaks') {
     switchTab('streaks');
